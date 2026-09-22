@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String        @id @default(uuid())
+  clerkId   String        @unique
+  email     String        @unique
+  name      String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  devices   Device[]
+}
+
+enum DeviceType {
+  ROUTER
+  SERVER
+  WEB_SERVER
+  PRINTER
+  PC
+  PHONE
+}
+
+enum DeviceStatus {
+  UNKNOWN
+  HEALTHY
+  DOWN
+}
+
+
+model Device {
+  id                String        @id @default(uuid())
+  userId            String
+  name              String
+  type              DeviceType
+  address           String
+  monitors          DeviceMonitor[]
+  status            DeviceStatus  @default(UNKNOWN)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum MonitoringMethod {
+  ICMP
+  TCP
+  HTTP
+  HTTPS
+  SNMP
+}
+
+model DeviceMonitor {
+  id                String        @id @default(uuid())
+  deviceId          String
+  method            MonitoringMethod
+  enabled           Boolean       @default(true)
+
+  config            Json?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  device            Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  results MonitoringResult[]
+
+  @@unique([deviceId, method])
+}
+
+model MonitoringResult {
+  id              String   @id @default(uuid())
+
+  monitorId       String
+  status          DeviceStatus
+  latency         Float?
+  
+  checkedAt       DateTime @default(now())
+
+  monitor         DeviceMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, checkedAt])
+}

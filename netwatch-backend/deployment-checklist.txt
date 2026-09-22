@@ -1,0 +1,3 @@
+use redis cloud for redis url
+use backend url for clerk webhook
+change frontend/client url to frontend url
